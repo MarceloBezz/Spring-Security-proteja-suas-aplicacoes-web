@@ -1,7 +1,6 @@
 package med.voll.web_application.domain.consulta;
 
 import jakarta.persistence.*;
-import med.voll.web_application.controller.PacienteController;
 import med.voll.web_application.domain.medico.Medico;
 import med.voll.web_application.domain.paciente.Paciente;
 

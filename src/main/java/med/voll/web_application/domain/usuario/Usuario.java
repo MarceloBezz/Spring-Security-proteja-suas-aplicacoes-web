@@ -1,6 +1,8 @@
 package med.voll.web_application.domain.usuario;
 
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -20,6 +22,17 @@ public class Usuario implements UserDetails {
     private String nome;
     private String email;
     private String senha;
+    @Enumerated(EnumType.STRING)
+    private Perfil perfil;
+
+    private Usuario(){}
+
+    public Usuario(String nome, String email, String senha, Perfil perfil) {
+        this.nome = nome;
+        this.email = email;
+        this.senha = senha;
+        this.perfil = perfil;
+    }
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
@@ -38,5 +51,13 @@ public class Usuario implements UserDetails {
 
     public String getNome() {
         return nome;
+    }
+
+    public Long getId() {
+        return id;
+    }
+
+    public Perfil getPerfil() {
+        return perfil;
     }
 }
