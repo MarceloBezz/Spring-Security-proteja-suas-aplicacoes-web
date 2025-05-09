@@ -5,8 +5,11 @@ import med.voll.web_application.domain.RegraDeNegocioException;
 import med.voll.web_application.domain.consulta.ConsultaService;
 import med.voll.web_application.domain.consulta.DadosAgendamentoConsulta;
 import med.voll.web_application.domain.medico.Especialidade;
+import med.voll.web_application.domain.usuario.Usuario;
+
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
@@ -50,14 +53,14 @@ public class ConsultaController {
     }
 
     @PostMapping
-    public String cadastrar(@Valid @ModelAttribute("dados") DadosAgendamentoConsulta dados, BindingResult result, Model model) {
+    public String cadastrar(@Valid @ModelAttribute("dados") DadosAgendamentoConsulta dados, BindingResult result, Model model, @AuthenticationPrincipal Usuario logado) {
         if (result.hasErrors()) {
             model.addAttribute("dados", dados);
             return PAGINA_CADASTRO;
         }
 
         try {
-            service.cadastrar(dados);
+            service.cadastrar(dados, logado);
             return REDIRECT_LISTAGEM;
         } catch (RegraDeNegocioException e) {
             model.addAttribute("erro", e.getMessage());
