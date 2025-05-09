@@ -1,10 +1,14 @@
 package med.voll.web_application.domain.usuario;
 
+import java.util.UUID;
+
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+
+import med.voll.web_application.domain.RegraDeNegocioException;
 
 @Service
 public class UsuarioService implements UserDetailsService {
@@ -23,13 +27,29 @@ public class UsuarioService implements UserDetailsService {
                 .orElseThrow(() -> new UsernameNotFoundException("O usuário não foi encontrado!"));
     }
 
-    public Long salvarUsuario(String nome, String email, String senha, Perfil perfil) {
-        String senhaCriptografada = encoder.encode(senha);
+    public Long salvarUsuario(String nome, String email, Perfil perfil) {
+        String primeiraSenha = UUID.randomUUID().toString().substring(0, 8);
+        System.out.println("Senha gerada: " + primeiraSenha);
+        String senhaCriptografada = encoder.encode(primeiraSenha);
         Usuario usuarioSalvo = usuarioRepository.save(new Usuario(nome, email, senhaCriptografada, perfil));
         return usuarioSalvo.getId();
     }
 
     public void excluir(Long id) {
         usuarioRepository.deleteById(id);
+    }
+
+    public void alterarSenha(DadosAlteracaoSenha dados, Usuario logado) {
+        if (!encoder.matches(dados.senhaAtual(), logado.getPassword())) {
+            throw new RegraDeNegocioException("Senha digitada não confere com a senha atual!");
+        }
+
+        if (!dados.novaSenha().equals(dados.novaSenhaConfirmacao())) {
+            throw new RegraDeNegocioException("Senhas não conferem!");
+        }
+
+        String senhaCriptografada = encoder.encode(dados.novaSenha());
+        logado.alterarSenha(senhaCriptografada);
+        usuarioRepository.save(logado);
     }
 }

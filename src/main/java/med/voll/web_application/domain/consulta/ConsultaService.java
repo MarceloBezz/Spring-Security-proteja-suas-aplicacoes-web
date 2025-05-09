@@ -4,6 +4,7 @@ import jakarta.transaction.Transactional;
 import med.voll.web_application.domain.RegraDeNegocioException;
 import med.voll.web_application.domain.medico.MedicoRepository;
 import med.voll.web_application.domain.paciente.PacienteRepository;
+import med.voll.web_application.domain.usuario.Perfil;
 import med.voll.web_application.domain.usuario.Usuario;
 
 import org.springframework.data.domain.Page;
@@ -19,14 +20,21 @@ public class ConsultaService {
     private final MedicoRepository medicoRepository;
     private final PacienteRepository pacienteRepository;
 
-    public ConsultaService(ConsultaRepository repository, MedicoRepository medicoRepository, PacienteRepository pacienteRepository) {
+    public ConsultaService(ConsultaRepository repository, MedicoRepository medicoRepository,
+            PacienteRepository pacienteRepository) {
         this.repository = repository;
         this.medicoRepository = medicoRepository;
         this.pacienteRepository = pacienteRepository;
     }
 
-    public Page<DadosListagemConsulta> listar(Pageable paginacao) {
-        return repository.findAllByOrderByData(paginacao).map(DadosListagemConsulta::new);
+    public Page<DadosListagemConsulta> listar(Pageable paginacao, Usuario usuarioLogado) {
+        if (usuarioLogado.getPerfil() == Perfil.ATENDENTE) {
+            return repository.findAllByOrderByData(paginacao).map(DadosListagemConsulta::new);
+        }
+
+        return repository
+                .buscaPersonalizadaConsultas(usuarioLogado.getId(), paginacao)
+                .map(DadosListagemConsulta::new);
     }
 
     @Transactional
@@ -34,9 +42,9 @@ public class ConsultaService {
         var medicoConsulta = medicoRepository.findById(dados.idMedico()).orElseThrow();
         var pacienteConsulta = pacienteRepository.findByCpf(dados.paciente()).orElseThrow();
 
-        if(usuarioLogado.getAuthorities().contains(new SimpleGrantedAuthority("ROLE_PACIENTE"))
-        && !pacienteConsulta.getId().equals(usuarioLogado.getId())) {
-            throw new  RegraDeNegocioException("CPF inválido!");
+        if (usuarioLogado.getAuthorities().contains(new SimpleGrantedAuthority("ROLE_PACIENTE"))
+                && !pacienteConsulta.getId().equals(usuarioLogado.getId())) {
+            throw new RegraDeNegocioException("CPF inválido!");
         }
 
         if (dados.id() == null) {
@@ -47,17 +55,18 @@ public class ConsultaService {
         }
     }
 
-    @PreAuthorize("hasRole('ATENDENTE') or " + 
-    "(hasRole('PACIENTE') and @consultaRepository.findById(#id).get().paciente.id == principal.id)")
+    @PreAuthorize("hasRole('ATENDENTE') or " +
+            "(hasRole('PACIENTE') and @consultaRepository.findById(#id).get().paciente.id == principal.id)")
     public DadosAgendamentoConsulta carregarPorId(Long id) {
         var consulta = repository.findById(id).orElseThrow();
-        return new DadosAgendamentoConsulta(consulta.getId(), consulta.getMedico().getId(), consulta.getPaciente().getNome(), consulta.getData(), consulta.getMedico().getEspecialidade());
+        return new DadosAgendamentoConsulta(consulta.getId(), consulta.getMedico().getId(),
+                consulta.getPaciente().getNome(), consulta.getData(), consulta.getMedico().getEspecialidade());
     }
 
     @Transactional
     @PreAuthorize("hasRole('ATENDENTE') or " +
-    "(hasRole('PACIENTE') and @consultaRepository.findById(#id).get().paciente.id == principal.id) or " +
-    "(hasRole('MEDICO') and @consultaRepository.findById(#id).get().medico.id == principal.id)")
+            "(hasRole('PACIENTE') and @consultaRepository.findById(#id).get().paciente.id == principal.id) or " +
+            "(hasRole('MEDICO') and @consultaRepository.findById(#id).get().medico.id == principal.id)")
     public void excluir(Long id) {
         repository.deleteById(id);
     }

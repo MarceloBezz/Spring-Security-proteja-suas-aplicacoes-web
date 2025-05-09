@@ -27,6 +27,7 @@ public class Usuario implements UserDetails {
     @Enumerated(EnumType.STRING)
     private Perfil perfil;
 
+    @SuppressWarnings("unused")
     private Usuario(){}
 
     public Usuario(String nome, String email, String senha, Perfil perfil) {
@@ -61,5 +62,9 @@ public class Usuario implements UserDetails {
 
     public Perfil getPerfil() {
         return perfil;
+    }
+
+    public void alterarSenha(String senhaCriptografada) {
+        this.senha = senhaCriptografada;
     }
 }
