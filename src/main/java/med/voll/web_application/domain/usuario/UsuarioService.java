@@ -1,5 +1,6 @@
 package med.voll.web_application.domain.usuario;
 
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 import org.springframework.security.core.userdetails.UserDetails;
@@ -9,16 +10,19 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import med.voll.web_application.domain.RegraDeNegocioException;
+import med.voll.web_application.domain.usuario.email.EmailService;
 
 @Service
 public class UsuarioService implements UserDetailsService {
 
     private final UsuarioRepository usuarioRepository;
     private final PasswordEncoder encoder;
+    private final EmailService emailService;
 
-    public UsuarioService(UsuarioRepository usuarioRepository, PasswordEncoder encoder) {
+    public UsuarioService(UsuarioRepository usuarioRepository, PasswordEncoder encoder, EmailService emailService) {
         this.usuarioRepository = usuarioRepository;
         this.encoder = encoder;
+        this.emailService = emailService;
     }
 
     @Override
@@ -32,6 +36,7 @@ public class UsuarioService implements UserDetailsService {
         System.out.println("Senha gerada: " + primeiraSenha);
         String senhaCriptografada = encoder.encode(primeiraSenha);
         Usuario usuarioSalvo = usuarioRepository.save(new Usuario(nome, email, senhaCriptografada, perfil));
+        emailService.enviarPrimeiraSenha(primeiraSenha, usuarioSalvo);
         return usuarioSalvo.getId();
     }
 
@@ -51,5 +56,18 @@ public class UsuarioService implements UserDetailsService {
         String senhaCriptografada = encoder.encode(dados.novaSenha());
         logado.alterarSenha(senhaCriptografada);
         usuarioRepository.save(logado);
+    }
+
+    public void enviarToken(String email) {
+        Usuario usuario = usuarioRepository.findByEmailIgnoreCase(email)
+        .orElseThrow(() -> new RegraDeNegocioException("Usuário não encontrado!"));
+        
+        String token = UUID.randomUUID().toString();
+        usuario.setToken(token);
+        usuario.setExpiracaoToken(LocalDateTime.now().plusMinutes(15));
+
+        usuarioRepository.save(usuario);
+
+        emailService.enviarEmailSenha(usuario);
     }
 }

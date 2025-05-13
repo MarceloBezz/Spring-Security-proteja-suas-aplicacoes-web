@@ -11,6 +11,7 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
+import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.Collections;
 
@@ -26,6 +27,8 @@ public class Usuario implements UserDetails {
     private String senha;
     @Enumerated(EnumType.STRING)
     private Perfil perfil;
+    private String token;
+    private LocalDateTime  expiracaoToken;
 
     @SuppressWarnings("unused")
     private Usuario(){}
@@ -66,5 +69,22 @@ public class Usuario implements UserDetails {
 
     public void alterarSenha(String senhaCriptografada) {
         this.senha = senhaCriptografada;
+    }
+
+    public String getToken() {
+        return token;
+    }
+
+    public void setToken(String token) {
+        this.token = token;
+    }
+
+
+    public LocalDateTime getExpiracaoToken() {
+        return expiracaoToken;
+    }
+
+    public void setExpiracaoToken(LocalDateTime expiracaoToken) {
+        this.expiracaoToken = expiracaoToken;
     }
 }
