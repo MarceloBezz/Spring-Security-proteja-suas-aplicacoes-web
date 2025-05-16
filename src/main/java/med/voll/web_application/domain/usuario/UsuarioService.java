@@ -60,8 +60,8 @@ public class UsuarioService implements UserDetailsService {
 
     public void enviarToken(String email) {
         Usuario usuario = usuarioRepository.findByEmailIgnoreCase(email)
-        .orElseThrow(() -> new RegraDeNegocioException("Usuário não encontrado!"));
-        
+                .orElseThrow(() -> new RegraDeNegocioException("Usuário não encontrado!"));
+
         String token = UUID.randomUUID().toString();
         usuario.setToken(token);
         usuario.setExpiracaoToken(LocalDateTime.now().plusMinutes(15));
@@ -69,5 +69,26 @@ public class UsuarioService implements UserDetailsService {
         usuarioRepository.save(usuario);
 
         emailService.enviarEmailSenha(usuario);
+    }
+
+    public void recuperarConta(String codigo, DadosRecuperacaoConta dados) {
+        Usuario usuario = usuarioRepository.findByTokenIgnoreCase(codigo)
+                .orElseThrow(() -> new RegraDeNegocioException("Link inválido!"));
+
+        if (usuario.getExpiracaoToken().isBefore(LocalDateTime.now())) {
+            throw new RegraDeNegocioException("Link expirado!");
+        }
+
+        if (!dados.novaSenha().equals(dados.novaSenhaConfirmacao())) {
+            throw new RegraDeNegocioException("Senhas não conferem!");
+        }
+
+        String senhaCriptografada = encoder.encode(dados.novaSenha());
+        usuario.alterarSenha(senhaCriptografada);
+
+        usuario.setToken(null);
+        usuario.setExpiracaoToken(null);
+
+        usuarioRepository.save(usuario);
     }
 }
