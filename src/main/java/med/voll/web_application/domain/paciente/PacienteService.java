@@ -31,7 +31,7 @@ public class PacienteService {
         }
 
         if (dados.id() == null) {
-            Long id = usuarioService.salvarUsuario(dados.nome(),dados.email(), Perfil.PACIENTE);
+            Long id = usuarioService.salvarUsuario(dados.nome(), dados.email(), Perfil.PACIENTE);
             repository.save(new Paciente(id, dados));
         } else {
             var paciente = repository.findById(dados.id()).orElseThrow();
@@ -39,9 +39,22 @@ public class PacienteService {
         }
     }
 
+    @Transactional
+    public void cadastroPeloUsuario(DadosCadastroPaciente dados) {
+        if (repository.isJaCadastrado(dados.email(), dados.cpf(), dados.id())) {
+            throw new RegraDeNegocioException("E-mail ou CPF já cadastrado para outro paciente!");
+        }
+
+        if (dados.id() == null) {
+            Long id = usuarioService.salvarUsuarioInativo(dados.nome(), dados.email());
+            repository.save(new Paciente(id, dados));
+        }
+    }
+
     public DadosCadastroPaciente carregarPorId(Long id) {
         var paciente = repository.findById(id).orElseThrow();
-        return new DadosCadastroPaciente(paciente.getId(), paciente.getNome(), paciente.getEmail(), paciente.getTelefone(), paciente.getCpf());
+        return new DadosCadastroPaciente(paciente.getId(), paciente.getNome(), paciente.getEmail(),
+                paciente.getTelefone(), paciente.getCpf());
     }
 
     @Transactional

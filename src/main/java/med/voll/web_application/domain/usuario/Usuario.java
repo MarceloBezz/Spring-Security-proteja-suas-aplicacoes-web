@@ -28,7 +28,16 @@ public class Usuario implements UserDetails {
     @Enumerated(EnumType.STRING)
     private Perfil perfil;
     private String token;
-    private LocalDateTime  expiracaoToken;
+    private LocalDateTime expiracaoToken;
+    private boolean ativo = true;
+
+    public boolean isAtivo() {
+        return ativo;
+    }
+
+    public void setAtivo(boolean ativo) {
+        this.ativo = ativo;
+    }
 
     @SuppressWarnings("unused")
     private Usuario(){}
@@ -38,6 +47,14 @@ public class Usuario implements UserDetails {
         this.email = email;
         this.senha = senha;
         this.perfil = perfil;
+    }
+
+    public Usuario(String nome, String email, String senha, Perfil perfil, boolean ativo) {
+        this.nome = nome;
+        this.email = email;
+        this.senha = senha;
+        this.perfil = perfil;
+        this.ativo = ativo;
     }
 
     @Override

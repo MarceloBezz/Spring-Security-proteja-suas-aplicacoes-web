@@ -7,6 +7,7 @@ import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
+import groovyjarjarantlr4.v4.parse.ATNBuilder.subrule_return;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
 import med.voll.web_application.domain.RegraDeNegocioException;
@@ -20,6 +21,7 @@ public class EmailService {
     private static final String NOME_ENVIADOR = "Clínica Voll Med";
 
     public static final String URL_SITE = "http://localhost:8080"; // "voll.med.com.br"
+    public static final String VALIDAR_EMAIL = "http://localhost:8080/validar-email"; // "voll.med.com.br"
 
     public EmailService(JavaMailSender enviadorEmail) {
         this.enviadorEmail = enviadorEmail;
@@ -61,12 +63,24 @@ public class EmailService {
         String assunto = "Seja bem vindo ao nosso sistema!";
         String conteudo = gerarConteudoEmail("Olá [[name]],<br>"
                 + "Aqui estão suas informações de login:<br>"
-                + "<strong>Email: " + usuario.getUsername() +"</strong><br>"
-                + "<strong>Senha: " + primeiraSenha +"</strong><br>"
+                + "<strong>Email: " + usuario.getUsername() + "</strong><br>"
+                + "<strong>Senha: " + primeiraSenha + "</strong><br>"
                 + "<h3><a href=\"[[URL]]\" target=\"_self\">ACESSAR SUA CONTA</a></h3>"
                 + "Conte com nossa equipe para o que precisar!<br>"
                 + "Obrigado,<br>"
                 + "Clínica Voll Med.", usuario.getNome(), URL_SITE + "/login");
+
+        enviarEmail(usuario.getUsername(), assunto, conteudo);
+    }
+
+    public void validarUsuario(Usuario usuario) {
+        String assunto = "Seja bem vindo ao nosso sistema!";
+        String conteudo = gerarConteudoEmail("Olá [[name]],<br>"
+                + "Sua conta na Vollmed está quase pronta. Só precisamos que você confirme seu cadastro clicando no link abaixo:<br>"
+                + "<h3><a href=\"[[URL]]\" target=\"_self\">VALIDAR</a></h3>"
+                + "Conte com nossa equipe para o que precisar!<br>"
+                + "Obrigado,<br>"
+                + "Clínica Voll Med.", usuario.getNome(), VALIDAR_EMAIL + "?codigo=" + usuario.getToken());
 
         enviarEmail(usuario.getUsername(), assunto, conteudo);
     }

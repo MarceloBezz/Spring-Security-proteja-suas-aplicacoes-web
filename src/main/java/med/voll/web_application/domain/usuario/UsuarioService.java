@@ -40,6 +40,17 @@ public class UsuarioService implements UserDetailsService {
         return usuarioSalvo.getId();
     }
 
+    public Long salvarUsuarioInativo(String nome, String email) {
+        String primeiraSenha = UUID.randomUUID().toString().substring(0, 8);
+        String senhaCriptografada = encoder.encode(primeiraSenha);
+        Usuario usuario = usuarioRepository.save(new Usuario(nome, email,senhaCriptografada, Perfil.PACIENTE, false));
+        String token = UUID.randomUUID().toString();
+        usuario.setToken(token);
+        usuario.setExpiracaoToken(LocalDateTime.now().plusMinutes(15));
+        emailService.validarUsuario(usuario);
+        return usuario.getId();
+    }
+
     public void excluir(Long id) {
         usuarioRepository.deleteById(id);
     }
@@ -90,5 +101,23 @@ public class UsuarioService implements UserDetailsService {
         usuario.setExpiracaoToken(null);
 
         usuarioRepository.save(usuario);
+    }
+
+    public void validarCadastro(String codigo) {
+        Usuario usuario = usuarioRepository.findByTokenIgnoreCase(codigo)
+                .orElseThrow(() -> new RegraDeNegocioException("Link inválido!"));
+
+        // if (usuario.getExpiracaoToken().isBefore(LocalDateTime.now())) {
+        //     throw new RegraDeNegocioException("Link expirado!");
+        // }
+
+        String primeiraSenha = UUID.randomUUID().toString().substring(0, 8);
+        System.out.println("Senha gerada: " + primeiraSenha);
+        String senhaCriptografada = encoder.encode(primeiraSenha);        
+        String token = UUID.randomUUID().toString();
+        usuario.setToken(token);
+        usuario.setExpiracaoToken(LocalDateTime.now().plusMinutes(15));
+        usuario.alterarSenha(senhaCriptografada);
+        emailService.enviarPrimeiraSenha(primeiraSenha, usuario);
     }
 }
